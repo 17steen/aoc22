@@ -1,33 +1,7 @@
-#include <algorithm>
-#include <iostream>
-#include <bitset>
 #include <cassert>
-#include <charconv>
-#include <chrono>
-#include <concepts>
-#include <cstdio>
-#include <cstdlib>
-#include <functional>
-#include <iterator>
-#include <memory>
-#include <numeric>
-#include <ranges>
-#include <string_view>
-#include <type_traits>
-#include <unordered_set>
-#include <utility>
-#include <variant>
-#include <vector>
 
 #include "fast_io.h"
-
-using namespace std::literals;
-namespace rg = std::ranges;
-namespace vw = rg::views;
-
-template <typename Range, typename Value>
-concept range_of =
-    rg::range<Range> && std::is_convertible_v<rg::range_value_t<Range>, Value>;
+#include "../lib/utils.hh"
 
 constexpr auto example = 
 R"(30373
@@ -36,26 +10,9 @@ R"(30373
 33549
 35390)"sv;
 
-template <typename DestType> constexpr auto to_vec(rg::range auto &&range) {
-    using value_type = rg::range_value_t<decltype(range)>;
-    auto vec = std::vector<DestType>{};
-    for (auto &&val : range) {
-        vec.emplace_back(std::forward<value_type>(val));
-    }
-    return vec;
-}
-
 constexpr auto parse(std::string_view input)
     -> range_of<std::string_view> auto {
     return to_vec<std::string_view>(input | vw::split("\n"sv));
-}
-
-template <size_t N> constexpr inline auto to_array(rg::range auto &&range) {
-    auto arr = std::array<rg::range_value_t<decltype(range)>, N>{};
-
-    rg::copy_n(rg::begin(range), N, rg::begin(arr));
-
-    return arr;
 }
 
 constexpr auto scenic_score(std::span<std::string_view const> trees, int i, int j) -> std::pair<int, bool> {

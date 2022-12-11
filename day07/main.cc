@@ -1,75 +1,7 @@
-#include <algorithm>
-#include <bitset>
-#include <cassert>
-#include <charconv>
-#include <chrono>
-#include <concepts>
-#include <cstdio>
-#include <cstdlib>
-#include <functional>
-#include <iterator>
-#include <memory>
-#include <numeric>
-#include <ranges>
-#include <string_view>
-#include <type_traits>
-#include <unordered_set>
-#include <utility>
 #include <variant>
-#include <vector>
 
+#include "../lib/utils.hh"
 #include "fast_io.h"
-
-using namespace std::literals;
-namespace rg = std::ranges;
-namespace vw = rg::views;
-
-[[gnu::pure]] inline int to_int_impl(std::string_view input) {
-    int res = -1;
-    std::from_chars(input.data(), input.data() + input.size(), res);
-    return res;
-}
-
-[[gnu::pure]] constexpr inline int to_int_impl_slow(std::string_view input) {
-
-    if (input.empty()) {
-        return std::numeric_limits<int>::min();
-    }
-
-    auto it = input.begin();
-
-    int sign = 1;
-    int result = 0;
-
-    if (*it == '-') {
-        sign = -1;
-        ++it;
-    } else if (*it == '+') {
-        ++it;
-    }
-
-    for (; it != input.end(); ++it) {
-        auto c = *it;
-        if (c < '0' || c > '9') {
-            return std::numeric_limits<int>::min();
-        }
-        result *= 10;
-        result += c - '0';
-    }
-
-    return result * sign;
-}
-
-[[gnu::pure]] constexpr inline int to_int(std::string_view input) {
-    if constexpr (std::is_constant_evaluated()) {
-        return to_int_impl_slow(input);
-    }
-    return to_int_impl(input);
-}
-
-template <typename Range, typename Value>
-concept range_of =
-    rg::range<Range> && std::is_convertible_v<rg::range_value_t<Range>, Value>;
 
 constexpr auto example = R"($ cd /
 $ ls
@@ -98,14 +30,6 @@ $ ls
 constexpr auto parse(std::string_view input)
     -> range_of<std::string_view> auto {
     return input | vw::split("\n"sv);
-}
-
-template <size_t N> constexpr inline auto to_array(rg::range auto &&range) {
-    auto arr = std::array<rg::range_value_t<decltype(range)>, N>{};
-
-    rg::copy_n(rg::begin(range), N, rg::begin(arr));
-
-    return arr;
 }
 
 struct node_t;
@@ -161,10 +85,6 @@ constexpr auto dir_node_t::for_each(
     return size;
 }
 
-template <class... Ts> struct overloaded : Ts... {
-    using Ts::operator()...;
-};
-template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 auto tree(dir_node_t const &root, int indent = 0) -> void {
     if (indent == 0)
@@ -241,8 +161,8 @@ constexpr auto solve(range_of<std::string_view> auto &&input) -> std::pair<int, 
         }
     }
 
-    if(!std::is_constant_evaluated()) 
-        println("root size: "sv, root_node.cached_size);
+    //if(!std::is_constant_evaluated()) 
+    //    println("root size: "sv, root_node.cached_size);
 
     constexpr auto fs_size = size_t{70'000'000};
     constexpr auto needed_space = size_t{30'000'000};

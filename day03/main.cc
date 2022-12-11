@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <bits/ranges_algo.h>
-#include <bits/ranges_uninitialized.h>
 #include <cassert>
 #include <charconv>
 #include <unordered_set>
@@ -16,27 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "../lib/utils.hh"
+
 #include "fast_io.h"
-
-using namespace std::literals;
-namespace rg = std::ranges;
-namespace vw = std::ranges::views;
-
-[[gnu::pure]] inline int to_int(std::string_view input) {
-    int res = -1;
-    std::from_chars(input.data(), input.data() + input.size(), res);
-    return res;
-}
-
-constexpr uint uncertain_parse(std::string_view input) {
-    auto res = 0u;
-    for (auto const c : input) {
-        res *= 10;
-        res += c & 0xFu;
-    }
-
-    return res;
-}
 
 constexpr auto example = R"(vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -126,14 +106,6 @@ constexpr auto solve(auto &&lines) {
 
 static_assert(solve(parse(example)).first == 157);
 static_assert(solve(parse(example2)).second == 70);
-
-constexpr auto to_vec(auto &&view) {
-    using value_type = std::decay_t<decltype(*view.begin())>;
-    auto result = std::vector<value_type>{};
-    std::copy(view.begin(), view.end(), std::back_inserter(result));
-
-    return result;
-}
 
 int main() {
 

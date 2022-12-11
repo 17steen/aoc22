@@ -15,6 +15,14 @@ using namespace std::literals;
 namespace rg = std::ranges;
 namespace vw = std::ranges::views;
 
+template <size_t N> constexpr inline auto to_array(rg::range auto &&range) {
+    auto arr = std::array<rg::range_value_t<decltype(range)>, N>{};
+
+    rg::copy_n(rg::begin(range), N, rg::begin(arr));
+
+    return arr;
+}
+
 template <typename DestType> constexpr auto to_vec(rg::range auto &&range) {
     using value_type = rg::range_value_t<decltype(range)>;
     auto vec = std::vector<DestType>{};
@@ -66,3 +74,14 @@ template <typename DestType> constexpr auto to_vec(rg::range auto &&range) {
     }
     return to_int_impl(input);
 }
+
+template <typename Range, typename Value>
+concept range_of =
+    rg::range<Range> && std::is_convertible_v<rg::range_value_t<Range>, Value>;
+
+
+// helpful with std::visit
+template <class... Ts> struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
