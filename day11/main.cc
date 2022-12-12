@@ -161,48 +161,26 @@ template <std::unsigned_integral Int>
     return (dividend + (divisor / 2)) / divisor;
 }
 
-auto solve_part1(std::vector<monkey_t> monkeys) -> uint64_t {
-
-    for(int i = 0; i < 20; ++i) {
-        for (monkey_t &monkey : monkeys) {
-            for(auto const item : monkey.items) {
-                auto worry_level = item;
-                worry_level = monkey.operation(worry_level, monkey.operation_value.value_or(worry_level));
-                worry_level = worry_level / 3;
-
-                monkey.inspection_count += 1;
-                
-                auto receiver = (worry_level % monkey.divisible_by == 0) ? monkey.when_true : monkey.when_false;
-                monkeys.at(receiver).items.emplace_back(worry_level);
-            }
-
-            monkey.items.clear();
-        }
-        //if(not std::is_constant_evaluated())
-        //    display(monkeys);
-    }
-
-    auto array = std::array<monkey_t, 2>{};
-    rg::partial_sort_copy(monkeys, array, [](auto const& a, auto const&b) {
-        return a.inspection_count > b.inspection_count;
-    }); 
-    
-    return array[0].inspection_count * array[1].inspection_count;
-}
-
-auto solve_part2(std::vector<monkey_t> monkeys) -> uint64_t {
+template<bool is_part2>
+constexpr auto solve_impl(std::vector<monkey_t> monkeys, int rounds) -> uint64_t {
     auto modulo = 1;
-    for(auto const& m : monkeys) {
-        modulo *= m.divisible_by;
-    }
 
-    for(int i = 0; i < 1000; ++i) {
+    if constexpr (is_part2)
+        for(auto const& m : monkeys)
+            modulo *= m.divisible_by;
+
+    for(int i = 0; i < rounds; ++i) {
         for (monkey_t &monkey : monkeys) {
             for(auto const item : monkey.items) {
                 auto worry_level = item;
                 worry_level = monkey.operation(worry_level, monkey.operation_value.value_or(worry_level));
-                
-                worry_level %= modulo;
+
+                if constexpr (is_part2) {
+                    worry_level %= modulo;
+                }
+                else {
+                    worry_level /= 3;
+                }
 
                 monkey.inspection_count += 1;
                 
@@ -212,7 +190,6 @@ auto solve_part2(std::vector<monkey_t> monkeys) -> uint64_t {
 
             monkey.items.clear();
         }
-        display(monkeys);
     }
 
     auto array = std::array<monkey_t, 2>{};
@@ -222,28 +199,20 @@ auto solve_part2(std::vector<monkey_t> monkeys) -> uint64_t {
     
     return array[0].inspection_count * array[1].inspection_count;
 }
-
 
 auto solve(std::vector<monkey_t> monkeys) -> std::pair<uint64_t, uint64_t> {
+    
+    constexpr auto divide_by_three = [](int64_t n) { return n / 3; };
 
-    auto part_1 = solve_part1(monkeys);
-    auto part_2 = solve_part2(monkeys);
+    auto part_1 = solve_impl<false>(monkeys, 20);
+    auto part_2 = solve_impl<true>(std::move(monkeys), 10'000);
     return std::make_pair(part_1, part_2);
 }
 
+static_assert(solve_impl<false>(parse(example), 20) == 10605);
+//static_assert(solve_impl<true>(parse(example), 10'000) == 2713310158ll); "too many iterations for constexpr"
+
 int main() {
-    //auto a = std::numeric_limits<int64_t>::max();
-    //a += 1;
-    //print(a);
-
-    auto not_const = example;
-    auto result = parse(not_const);
-    assert(result[0].id == 0);
-    assert(result[0].items[1] == 98);
-    auto solved = solve(result);
-    assert(solved.first == 10605);
-    assert(solved.second == 2713310158ll);
-
 
     benchmark([]() {
         auto input = fast_io::native_file_loader("input");

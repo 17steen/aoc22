@@ -15,6 +15,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ctre::ctre)
 
 find_package(range-v3 CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE range-v3 range-v3-meta range-v3::meta range-v3-concepts)
-target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fsanitize-trap=undefined)
-target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fsanitize-trap=undefined)
+
+#target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fsanitize-trap=undefined)
+#target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fsanitize-trap=undefined)
 
