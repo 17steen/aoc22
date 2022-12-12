@@ -4,12 +4,15 @@
 #include <array>
 #include <charconv>
 #include <chrono>
+#include <concepts>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <ranges>
 #include <string_view>
 #include <vector>
+
+#include "fast_io.h"
 
 using namespace std::literals;
 namespace rg = std::ranges;
@@ -18,8 +21,19 @@ namespace vw = std::ranges::views;
 template <size_t N> constexpr inline auto to_array(rg::range auto &&range) {
     auto arr = std::array<rg::range_value_t<decltype(range)>, N>{};
 
+
     rg::copy_n(rg::begin(range), N, rg::begin(arr));
 
+    return arr;
+}
+
+template <size_t N, typename T> constexpr inline auto to_array_of(rg::range auto &&range) {
+    std::array<T, N> arr;
+    auto it = rg::begin(range);
+    for(size_t i = 0; i < N; ++i) {
+        rg::construct_at(std::addressof(arr[i]), *it);
+        ++it;
+    }
     return arr;
 }
 
@@ -85,3 +99,15 @@ template <class... Ts> struct overloaded : Ts... {
     using Ts::operator()...;
 };
 template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+auto benchmark(auto&& func) {
+
+    auto then = std::chrono::high_resolution_clock::now();
+
+    func();
+
+    auto now = std::chrono::high_resolution_clock::now();
+    auto diff = std::chrono::duration<double, std::micro>(now - then);
+
+    println(diff.count(), "us");
+}
