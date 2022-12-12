@@ -156,11 +156,6 @@ constexpr auto parse(std::string_view input) {
     return to_vec<monkey_t>(res);
 }
 
-template <std::unsigned_integral Int>
-[[nodiscard]] static constexpr inline auto divide_nearest(Int dividend, Int divisor) -> Int {
-    return (dividend + (divisor / 2)) / divisor;
-}
-
 template<bool is_part2>
 constexpr auto solve_impl(std::vector<monkey_t> monkeys, int rounds) -> uint64_t {
     auto modulo = 1;
