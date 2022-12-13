@@ -180,7 +180,7 @@ constexpr auto solve_impl(std::vector<monkey_t> monkeys, int rounds) -> uint64_t
                 monkey.inspection_count += 1;
                 
                 auto receiver = (worry_level % monkey.divisible_by == 0) ? monkey.when_true : monkey.when_false;
-                monkeys.at(receiver).items.emplace_back(worry_level);
+                monkeys[receiver].items.emplace_back(worry_level);
             }
 
             monkey.items.clear();
@@ -188,9 +188,7 @@ constexpr auto solve_impl(std::vector<monkey_t> monkeys, int rounds) -> uint64_t
     }
 
     auto array = std::array<monkey_t, 2>{};
-    rg::partial_sort_copy(monkeys, array, [](auto const& a, auto const&b) {
-        return a.inspection_count > b.inspection_count;
-    }); 
+    rg::partial_sort_copy(monkeys, array, rg::greater{}, &monkey_t::inspection_count, &monkey_t::inspection_count); 
     
     return array[0].inspection_count * array[1].inspection_count;
 }

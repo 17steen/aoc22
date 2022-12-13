@@ -16,7 +16,7 @@
 
 using namespace std::literals;
 namespace rg = std::ranges;
-namespace vw = std::ranges::views;
+namespace vw = rg::views;
 
 template <size_t N> constexpr inline auto to_array(rg::range auto &&range) {
     auto arr = std::array<rg::range_value_t<decltype(range)>, N>{};
