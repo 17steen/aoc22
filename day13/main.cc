@@ -151,39 +151,32 @@ constexpr auto parse(std::string_view input) {
     return groups;
 }
 
-auto solve(range_of<parsed_t> auto groups) -> std::pair<uint64_t, uint64_t> {
+auto solve(range_of<parsed_t> auto groups) -> std::pair<int, int> {
     auto part_1 = 0;
     
+    auto first_sentinel = 1; // will be after the 
+    auto second_sentinel = first_sentinel + 1; // start at one
+    
     auto index = 1;
-    
-    auto packets = std::vector<value_t>{};
-    
-    for(auto&&[left, right] : groups) {
-
-        println(left.to_string(), " < "sv, right.to_string());
+    for(auto &&[left, right] : groups) {
 
         if (left < right) {
             part_1 += index;
         }
         
-        packets.emplace_back(std::move(left));
-        packets.emplace_back(std::move(right));
+        if(2 > left)
+            ++first_sentinel;
+        if(2 > right)
+            ++first_sentinel;
+        if(6 > left)
+            ++second_sentinel;
+        if(6 > right)
+            ++second_sentinel;
         
         ++index;
     }
     
-    packets.emplace_back(value_t::from(2));
-    packets.emplace_back(value_t::from(6));
-    
-    rg::sort(packets, std::less{});
-    //for(auto const& packet : packets)
-    //    println(packet.to_string());
-    
-    auto first = rg::find(packets, value_t::from(2));
-
-    auto second = rg::find(first, packets.end(), value_t::from(6));
-    
-    auto part_2 = (first - packets.begin() + 1) * (second - packets.begin() + 1);
+    auto part_2 = first_sentinel * second_sentinel;
 
     return std::make_pair(part_1, part_2);
 }
@@ -195,6 +188,7 @@ auto solve(range_of<parsed_t> auto groups) -> std::pair<uint64_t, uint64_t> {
 
 int main() {
     //auto test = "[1,[2,[3,[4,[5,6,7]]]],8,9]"sv;
+
     auto parsed = parse(example);
     auto solved = solve(parsed);
 
