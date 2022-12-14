@@ -82,6 +82,39 @@ template <typename DestType> constexpr auto to_vec(rg::range auto &&range) {
     return result * sign;
 }
 
+[[gnu::pure]] constexpr inline auto from_chars_const(char const* begin, char const* end, std::integral auto &result) -> char const* {
+
+    if (begin == end) {
+        return begin;
+    }
+
+    auto it = begin;
+
+    int sign = 1;
+    result = 0;
+
+    if (*it == '-') {
+        sign = -1;
+        ++it;
+    } else if (*it == '+') {
+        ++it;
+    }
+
+    for (; it != end; ++it) {
+        auto c = *it;
+        if (c < '0' || c > '9') {
+            return it;
+
+        }
+        result *= 10;
+        result += c - '0';
+    }
+
+    result *= sign;
+
+    return end;
+}
+
 [[gnu::pure]] constexpr int to_int(std::string_view input) {
     if (std::is_constant_evaluated()) {
         return to_int_impl_slow(input);

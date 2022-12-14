@@ -1,10 +1,11 @@
 #include "../lib/utils.hh"
 #include <cassert>
 #include <chrono>
+#include <compare>
 #include <concepts>
 #include <simdjson.h>
+#include <type_traits>
 #include <utility>
-#include <compare>
 #include <variant>
 
 constexpr auto example =
@@ -34,78 +35,84 @@ constexpr auto example =
 
 struct value_t {
     std::variant<int64_t, std::vector<value_t>> val;
-    
+
     constexpr auto as_span() const -> std::span<value_t const> {
-        if(auto ptr = std::get_if<int64_t>(&val)) {
+        if (auto ptr = std::get_if<int64_t>(&val)) {
             return {this, 1};
         }
-        
+
         return std::get<std::vector<value_t>>(val);
     }
-    
-    auto to_string() const -> std::string {
+
+    constexpr auto to_string() const -> std::string {
         auto result = std::string{};
-        
+
         std::visit(overloaded{
-                [&](int64_t value) { result += std::to_string(value); },
-                [&](std::span<value_t const> value) {
-                    result += "[";
-                    for(auto const& val : value){
-                        result += val.to_string();
-                        result += ", ";
-                    }
-                    result += "]";
-                },
-        }, val);
-        
+                       [&](int64_t value) { result += std::to_string(value); },
+                       [&](std::span<value_t const> value) {
+                           result += "[";
+                           for (auto const &val : value) {
+                               result += val.to_string();
+                               result += ", ";
+                           }
+                           result += "]";
+                       },
+                   },
+                   val);
+
         return result;
     }
 
-    template<std::convertible_to<decltype(val)> T>
-    static value_t from(T&& t) {
+    template <std::convertible_to<decltype(val)> T> static constexpr value_t from(T &&t) {
         return value_t{.val = std::move(t)};
     }
-    
-    template<std::convertible_to<decltype(val)> T>
-    constexpr auto operator<=>(T value) {
-        return *this <=> value_t{.val = std::move(value)};
-    }
-    
-    constexpr auto operator==(value_t const&other) const -> bool = default;
 
-    constexpr auto operator<=>(value_t const&other) const -> std::weak_ordering {
-        if(std::holds_alternative<int64_t>(val) && std::holds_alternative<int64_t>(other.val))
-        {
+    template <std::convertible_to<decltype(val)> T>
+    constexpr auto operator<=>(T value) {
+        return *this <=> value_t::from(value);
+    }
+
+    constexpr auto operator==(value_t const &other) const -> bool = default;
+
+    constexpr auto operator<=>(value_t const &other) const
+        -> std::weak_ordering {
+        if (std::holds_alternative<int64_t>(val) &&
+            std::holds_alternative<int64_t>(other.val)) {
             return std::get<int64_t>(val) <=> std::get<int64_t>(other.val);
-        }
-        else {
+        } else {
             auto a = as_span();
             auto b = other.as_span();
 
-            for(auto i = 0; i < a.size(); ++i)  {
-                if(i >= b.size()) {
+            for (auto i = 0; i < a.size(); ++i) {
+                if (i >= b.size()) {
                     return std::weak_ordering::greater;
                 }
-                
-                auto const& a_val = a[i];
-                auto const& b_val = b[i];
-                
+
+                auto const &a_val = a[i];
+                auto const &b_val = b[i];
+
                 auto comp = a_val <=> b_val;
-                
-                if(comp != std::weak_ordering::equivalent) {
+
+                if (comp != std::weak_ordering::equivalent) {
                     return comp;
                 }
             }
-            if(a.size() < b.size()) {
+            if (a.size() < b.size()) {
                 return std::weak_ordering::less;
             }
-            
+
             return std::weak_ordering::equivalent;
         }
     }
 
+    static constexpr auto parse(std::string_view str) -> value_t {
+        if (std::is_constant_evaluated()) {
+            return parse_manually(str);
+        }
+        return parse_as_json(str);
+    }
 
-    static value_t from_string(std::string_view str) {
+    static auto parse_as_json(std::string_view str) -> value_t {
 
         auto parser = simdjson::ondemand::parser{};
         auto json = simdjson::padded_string{str};
@@ -117,6 +124,52 @@ struct value_t {
             throw "nope";
 
         return from_json_value(doc.get_value().take_value());
+    }
+
+    static constexpr auto parse_manually(std::string_view input) -> value_t {
+        return parse_value_impl(&*input.begin(), &*input.end()).first;
+    }
+
+    static constexpr auto parse_value_impl(char const *begin, char const *end)
+        -> std::pair<value_t, char const *> {
+
+        if (begin == end)
+            abort();
+
+        if (*begin == '[') {
+            ++begin;
+            auto vec = std::vector<value_t>{};
+
+            if (begin == end)
+                abort();
+            if (*begin == ']')
+                return {value_t::from(vec), begin + 1};
+
+            while (true) {
+                if (begin == end)
+                    abort();
+                if (*begin == ']')
+                    return {value_t::from(vec), begin + 1};
+
+                auto const [val, ptr] = parse_value_impl(begin, end);
+
+                begin = ptr;
+                vec.emplace_back(std::move(val));
+
+                if (begin == end)
+                    abort();
+                if (*begin == ']')
+                    return {value_t::from(vec), begin + 1};
+                if (*begin != ',')
+                    abort();
+                ++begin;
+            }
+        } else {
+            int64_t val;
+            auto const last= from_chars_const(begin, end, val);
+
+            return {value_t::from(val), last};
+        }
     }
 
     static value_t from_json_value(simdjson::ondemand::value val) {
@@ -135,7 +188,7 @@ struct value_t {
             return value_t::from(val.get_int64());
         }
         default:
-            assert(false);
+            abort();
         }
     }
 };
@@ -145,49 +198,48 @@ using parsed_t = std::array<value_t, 2>;
 constexpr auto parse(std::string_view input) {
     auto groups = input | vw::split("\n\n"sv) | vw::transform([](auto &&group) {
                       return to_array<2>(group | vw::split("\n"sv) |
-                                         vw::transform(value_t::from_string));
+                                         vw::transform(value_t::parse));
                   });
 
     return groups;
 }
 
-auto solve(range_of<parsed_t> auto groups) -> std::pair<int, int> {
+constexpr auto solve(range_of<parsed_t> auto groups) -> std::pair<int, int> {
     auto part_1 = 0;
-    
-    auto first_sentinel = 1; // will be after the 
+
+    auto first_sentinel = 1;                   // will be after the
     auto second_sentinel = first_sentinel + 1; // start at one
-    
+
     auto index = 1;
-    for(auto &&[left, right] : groups) {
+    for (auto &&[left, right] : groups) {
 
         if (left < right) {
             part_1 += index;
         }
-        
-        if(2 > left)
+
+        if (2 > left)
             ++first_sentinel;
-        if(2 > right)
+        if (2 > right)
             ++first_sentinel;
-        if(6 > left)
+        if (6 > left)
             ++second_sentinel;
-        if(6 > right)
+        if (6 > right)
             ++second_sentinel;
-        
+
         ++index;
     }
-    
+
     auto part_2 = first_sentinel * second_sentinel;
 
     return std::make_pair(part_1, part_2);
 }
 
-// static_assert(solve_impl<false>(parse(example), 20) == 10605);
-// static_assert(solve_impl<true>(parse(example), 10'000) == 2713310158ll); "too
-// many iterations for constexpr"
-
+// variant isn't constexpr it seems
+//static_assert(solve(parse(example)).first == 13);
 
 int main() {
-    //auto test = "[1,[2,[3,[4,[5,6,7]]]],8,9]"sv;
+    auto test = "[1,[2,[3,[4,[5,6,7]]]],8,9]"sv;
+    auto funny = value_t::parse(test);
 
     auto parsed = parse(example);
     auto solved = solve(parsed);
