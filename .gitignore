@@ -1,3 +1,4 @@
 .cache
 build
 *.bak
+cmake-build-debug
