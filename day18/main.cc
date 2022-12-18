@@ -106,42 +106,44 @@ constexpr auto parse(std::string_view input) -> range_of<pt3d_t> auto {
 
 auto has_access_to_air(std::unordered_set<pt3d_t> const &points,
                        pt3d_t const pt, pt3d_t const min, pt3d_t const max,
-                       std::unordered_set<pt3d_t>& already_visited,
-                       std::unordered_map<pt3d_t, bool>& global_cache) -> bool {
+                       std::unordered_set<pt3d_t> &already_visited,
+                       std::unordered_map<pt3d_t, bool> &global_cache) -> bool {
 
-    if(points.contains(pt))
+    if (points.contains(pt))
         return false;
 
-    // if it has already been visited and the answer was found, we wouldn't be here
-    if(not already_visited.emplace(pt).second)
+    // if it has already been visited and the answer was found, we wouldn't be
+    // here
+    if (not already_visited.emplace(pt).second)
         return global_cache[pt] = false;
-    
-    if(auto it = global_cache.find(pt); it !=  global_cache.end())
+
+    if (auto it = global_cache.find(pt); it != global_cache.end())
         return it->second;
 
     for (auto const dir : directions) {
         auto const next_to = pt + dir;
 
-
         if (next_to < min or max < next_to) {
             return global_cache[next_to] = global_cache[pt] = true;
         }
-        
-        if(has_access_to_air(points, next_to, min, max, already_visited, global_cache)) {
+
+        if (has_access_to_air(points, next_to, min, max, already_visited,
+                              global_cache)) {
             return global_cache[next_to] = global_cache[pt] = true;
         }
     }
-    
+
     return false;
 }
 
-auto exposed_sides_both(std::unordered_set<pt3d_t> const &points, pt3d_t const min, pt3d_t const max) -> std::pair<int, int> {
+auto exposed_sides_both(std::unordered_set<pt3d_t> const &points,
+                        pt3d_t const min, pt3d_t const max)
+    -> std::pair<int, int> {
 
     auto p1 = 0;
     auto p2 = 0;
-    
+
     auto global_cache = std::unordered_map<pt3d_t, bool>{};
-    
 
     for (auto const pt : points) {
         for (auto const dir : directions) {
@@ -149,11 +151,14 @@ auto exposed_sides_both(std::unordered_set<pt3d_t> const &points, pt3d_t const m
             auto const next_to = pt + dir;
 
             auto already_visited = std::unordered_set<pt3d_t>{};
-            if (has_access_to_air(points, next_to, min, max, already_visited, global_cache)) {
+            if (has_access_to_air(points, next_to, min, max, already_visited,
+                                  global_cache)) {
                 p2 += 1;
             }
-            
-            if(already_visited.size() > 0) { // this means that we had to travel further than the sides, there was thus at least an air bubble
+
+            // this means that we had to travel further than the sides,
+            // there was thus at least an air bubble
+            if (already_visited.size() > 0) {
                 p1 += 1;
             }
         }
@@ -195,8 +200,8 @@ auto solve(range_of<pt3d_t> auto points) -> std::pair<int, int> {
     return exposed_sides_both(set, min, max);
 }
 
-constexpr auto my_example = 
-R"(1,0,0
+constexpr auto my_example =
+    R"(1,0,0
 0,1,0
 0,0,1
 -1,0,0
