@@ -124,6 +124,7 @@ auto has_access_to_air(std::unordered_set<pt3d_t> const &points,
     for (auto const dir : directions) {
         auto const next_to = pt + dir;
 
+        // there no rock registered outside these bounds
         if (next_to < min or max < next_to) {
             return global_cache[next_to] = global_cache[pt] = true;
         }
