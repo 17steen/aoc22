@@ -20,9 +20,8 @@ int main() {
 
 
     long part1;
-    futhark_entry_solve(context, &part1, 4, arr);
     long part2;
-    futhark_entry_solve(context, &part2, 14, arr);
+    futhark_entry_solve(context, &part1, &part2, arr);
     
     println(part1);
     println(part2);
