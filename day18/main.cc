@@ -50,6 +50,7 @@ struct pt3d_t {
     }
 };
 
+// no diagonals, 6 possible moves
 static constexpr auto directions = {
     pt3d_t{
         1,
@@ -207,6 +208,8 @@ constexpr auto my_example =
 -1,0,0
 0,-1,0
 0,0,-1)"sv;
+    
+static_assert(parse_one("7,8,9") == pt3d_t{.x = 7, .y = 8, .z = 9});
 
 int main() {
 
