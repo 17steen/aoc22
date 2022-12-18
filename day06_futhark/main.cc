@@ -1,5 +1,6 @@
 #include "lib.h"
 #include "fast_io.h"
+#include <cstddef>
 #include <vector>
 #include <chrono>
 #include <span>
@@ -11,12 +12,14 @@ using namespace std::string_view_literals;
 int main() {
     // i won't count the initialization as part of the runtime, although it sure is
     auto *cfg = futhark_context_config_new();
+    futhark_context_config_set_cache_file(cfg, "futhark.cache");
     auto* context = futhark_context_new(cfg);
 
     auto then = std::chrono::high_resolution_clock::now();
 
     auto file = fast_io::native_file_loader{"input"};
-    auto* arr = futhark_new_i8_1d(context, reinterpret_cast<int8_t*>(file.data()), file.size());
+    auto* arr = futhark_new_u8_1d(context, reinterpret_cast<uint8_t*>(file.data()), file.size());
+
 
 
     long part1;
@@ -29,7 +32,7 @@ int main() {
     auto diff = std::chrono::duration<double, std::micro>(now - then);
     println(diff.count(), "µs");
     
-    futhark_free_i8_1d(context, arr);
+    futhark_free_u8_1d(context, arr);
     futhark_context_free(context);
     futhark_context_config_free(cfg);
 }

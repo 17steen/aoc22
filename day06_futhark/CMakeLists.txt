@@ -32,3 +32,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${FASTIO_INCLUDE_DIRS})
 
 find_package(CUDAToolkit REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart CUDA::nvrtc)
+find_package(OpenCL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenCL::OpenCL)
