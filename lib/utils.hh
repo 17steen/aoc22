@@ -14,6 +14,8 @@
 
 #include "fast_io.h"
 
+using int128_t = __int128;
+
 using namespace std::literals;
 namespace rg = std::ranges;
 namespace vw = rg::views;

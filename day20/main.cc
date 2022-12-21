@@ -17,9 +17,10 @@ constexpr auto example =
 0
 4)"sv;
 
+
 constexpr auto parse(std::string_view input) -> auto {
     return input | vw::split("\n"sv) | vw::transform([i = 0](auto a) mutable {
-               return std::make_pair(i++, mpz_class(to_int(a)));
+               return std::make_pair(i++, static_cast<int64_t>(to_int(a)));
            });
 }
 
@@ -28,37 +29,20 @@ constexpr auto abs(std::integral auto a) {
     return a < 0 ? -a : a;
 }
 
-constexpr auto mod_should_work(int64_t n, int64_t max) -> size_t {
+template<std::integral Int>
+[[nodiscard]] constexpr auto mod(Int n, Int max) -> std::make_unsigned_t<Int> {
     auto r = n % max;
-    return r >= 0 ? r : r + abs(max);
+    return static_cast<std::make_unsigned_t<Int>>(r >= 0 ? r : r + abs(max));
 }
 
-auto mod(int64_t n, size_t max) -> size_t {
-    auto big_n  = mpz_class{n};
-    
-    auto first_result = mod_should_work(n, max);
-
-    //auto result = mpz_class{};
-    
-    auto result = mpz_fdiv_ui(big_n.get_mpz_t(), max);
-    
-    //assert(result == first_result);
-    
-    return result;
-}
-
-auto mod(mpz_class const& n, size_t max) -> size_t {
-    return mpz_fdiv_ui(n.get_mpz_t(), max);
-}
-
-using pair = std::pair<int, mpz_class>;
+using pair = std::pair<int, int64_t>;
 
 auto solve(auto input) -> std::pair<long, long> {
     // pairs of their original index and the value
     auto original = to_vec<pair>(input);
 
     auto mix = [&](auto &original) {
-        for (int i = 0; i < original.size(); ++i) {
+        for (auto i = 0; i < static_cast<int64_t>(original.size()); ++i) {
             auto it = rg::find(original, i, &pair::first);
             auto idx = it - original.begin();
 
@@ -79,18 +63,18 @@ auto solve(auto input) -> std::pair<long, long> {
     };
 
     auto get_grove = [](auto const &arr) {
-        auto size = arr.size();
+        auto size = static_cast<int64_t>(arr.size());
         auto idx_of_zero =
             rg::find(arr, 0, &pair::second) - arr.begin();
 
-        return mpz_class{arr[mod(idx_of_zero + 1000, size)].second +
+        return arr[mod(idx_of_zero + 1000, size)].second +
                arr[mod(idx_of_zero + 2000, size)].second +
-               arr[mod(idx_of_zero + 3000, size)].second};
+               arr[mod(idx_of_zero + 3000, size)].second;
     };
 
     auto copy = original;
     mix(copy);
-    auto part_1 = get_grove(copy).get_si();
+    auto part_1 = get_grove(copy);
 
     for (auto &[idx, value] : original) {
         value *= 811589153;
@@ -100,7 +84,7 @@ auto solve(auto input) -> std::pair<long, long> {
         mix(original);
     }
 
-    auto part_2 = get_grove(original).get_si();
+    auto part_2 = get_grove(original);
 
 
     return std::make_pair(part_1, part_2);

@@ -6,7 +6,7 @@ add_executable(${PROJECT_NAME} main.cc)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wconversion -Wall -Wextra -Wpedantic")
+target_compile_options(${PROJECT_NAME} PRIVATE "-Wconversion" "-Wall" "-Wextra" "-Wpedantic" "-ffast-math")
 
 include("~/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
